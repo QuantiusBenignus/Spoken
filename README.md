@@ -3,7 +3,8 @@
 ---
 *(This repository expands on the older [NoteWhispers](https://github.com/QuantiusBenignus/NoteWhispers) by bringing new functionality, such as recording Joplin to-do tasks with alarms and the ability to handle multiple audio files)*
 
-![vmNewNote.png](resources/vmNewNote.png)
+![vmJoplin-todo.png](resources/vmJoplin-todo.png)
+![whisper-todo.png](resources/whisper-todo.png)
 
 #### DESCRIPTION:  
 These two Linux command-line utilities (with optional GNOME integration) are named respectively **vm** and **td** for brevity and quick access from the command line (check your PATH for conflicts and rename accordingly if needed.)
