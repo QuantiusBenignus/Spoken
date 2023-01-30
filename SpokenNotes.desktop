@@ -1,0 +1,26 @@
+[Desktop Entry]
+Name=Spoken_Notes_TO-DOs
+Comment=For use with the vm and td CLI utilities
+Exec=gnome-terminal --window-with-profile=YOURPROFILENAME --hide-menubar --geometry=64x6+380+920 --title=VoiceMemos
+Icon=/home/YOURUSERNAME/.local/share/icons/hicolor/128x128/apps/mic128.png
+Terminal=true
+Type=Application
+Categories=Application
+Actions=new-note;new-clip;new-todo;inline-todo;
+
+[Desktop Action new-note]
+Name=New Joplin Note
+Exec=gnome-terminal --window-with-profile=Lilico --hide-menubar --geometry=64x6+380+920 --title=NewNote -- vm
+
+[Desktop Action new-clip]
+Name=Record To Clipboard
+Exec=gnome-terminal --window-with-profile=Lilico --hide-menubar --geometry=64x6+380+920 --title=NewClip -- vm -c
+
+[Desktop Action new-todo]
+Name=New Joplin ToDo
+Exec=gnome-terminal --window-with-profile=Lilico --hide-menubar --geometry=64x6+380+920 --title=NewTodo -- td
+
+[Desktop Action inline-todo]
+Name=ToDo to Clipboard
+Exec=gnome-terminal --window-with-profile=Lilico --hide-menubar --geometry=64x6+380+920 --title=InlineTodo -- td -c
+
