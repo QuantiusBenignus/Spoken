@@ -1,7 +1,7 @@
 # *Joplin Text Notes and To-Dos via Speech*
-##### *Voice memos recorded from the microphone, transcribed offline to text and converted to Joplin notes or To-Do tasks with automatic notifications. Can also transcribe from existing audio files.*
+##### *Voice memos recorded from the microphone, transcribed offline to text and converted to Joplin notes or To-Do tasks with automatic notifications. Can also transcribe batches of existing voice memos.*
 ---
-*(This repository expands on the older [NoteWhispers](https://github.com/QuantiusBenignus/NoteWhispers) by bringing new functionality, such as recording Joplin to-do tasks with alarms and the ability to handle multiple audio files)*
+*(This repository expands on the older [NoteWhispers](https://github.com/QuantiusBenignus/NoteWhispers) by bringing new functionality, such as recording Joplin to-do tasks with alarms and the ability to handle multiple voice memos)*
 
 ![vmJoplin-todo.png](resources/vmJoplin-todo.png)
 ![whisper-todo.png](resources/whisper-todo.png)
