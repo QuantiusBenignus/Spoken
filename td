@@ -256,6 +256,9 @@ else
     str="${str/ half past / +30min }"
     str="${str/ (during|around|just before) sunrise/ 6:30am}"
     str="${str/ (during|around|just before) sunset/ 7:30pm}"
+    setopt extendedglob
+    str="${str/(#m)[0-9].[0-9]/$MATCH[1]:$MATCH[3]}"
+    unsetopt extendedglob
     #whisper detected non-speech events such as (wind blowing): 
     str="${str/\(*\)}"   
     str="${str/\[*\]}"    
