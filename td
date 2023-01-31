@@ -231,6 +231,16 @@ else
     str="${str/a.m. /am }"
     str="${str/ weekend / Sun 1pm }"
     str="${str/ next weekend/ Sun 1pm +7day}"
+    setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
+    str="${str/(#m)[0-9].[0-9]/$MATCH[1]:$MATCH[3]}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# in the morning/$MATCH[1,$MEND-$MBEGIN-14]am}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) [1-7](:[0-5][0-9])# in the afternoon/$MATCH[1,$MEND-$MBEGIN-16]pm}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# in the evening/$MATCH[1,$MEND-$MBEGIN-14]pm}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([1-3]|12)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]am}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) (10|11)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]pm}"
+    str="${str/(#m)( at| to|ast)# ([6-9]|10|11)(:[0-5][0-9])# tonight/$MATCH[1,$MEND-$MBEGIN-7]pm}"
+    str="${str/(#m)tonight*([6-9]|10|11)(:[0-5][0-9])#/today $MATCH[9,$MEND]pm}"
+    unsetopt extendedglob
     str="${str/ before noon/ 11am}"  
     str="${str/ before dawn/ 4am}"
     str="${str/ before dusk/ 5pm}"
@@ -256,9 +266,6 @@ else
     str="${str/ half past / +30min }"
     str="${str/ (during|around|just before) sunrise/ 6:30am}"
     str="${str/ (during|around|just before) sunset/ 7:30pm}"
-    setopt extendedglob
-    str="${str/(#m)[0-9].[0-9]/$MATCH[1]:$MATCH[3]}"
-    unsetopt extendedglob
     #whisper detected non-speech events such as (wind blowing): 
     str="${str/\(*\)}"   
     str="${str/\[*\]}"    
