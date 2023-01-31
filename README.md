@@ -254,8 +254,10 @@ For example:
 * or even *"...**notification** at the usual time"* for some extra customization (see code for ideas).
 
 Speaking literaly "YYYY/MM/DD", followed by time (if needed) e.g. *"2024 slash 5 slash 23 at 1pm"* works well too.
-As a minimum, the month should precede the date and time, e.g. "March 12" not "12 of March"
-If parsing is unsuccessful, the utility will not set an alarm in Joplin and it has to be done manualy. A warning will be issued but the to-do task will be created successfully. The failure can be due to errors in the user instructions, errors in the speech recognition, limitations of the simplistic datetime preprocessor etc. With practice (and good diction:-) the error rate can be comparable to the error rate for speech recognition.
+As a minimum, the month should precede the date and time, e.g. "March 12" not "12 of March".
+If parsing is unsuccessful, the utility will not set an alarm in Joplin and it has to be done manualy. 
+A warning will be issued but the to-do task will be created successfully. 
+The failure can be due to errors in the user instructions, errors in the speech recognition, limitations of the simplistic datetime preprocessor etc. With practice (and good diction:-) the error rate can be comparable to the error rate for speech recognition.
 In some edge cases, successful parsing gives incorrect datetime. Some practice needed to avoid those
 For scheduling critically-important stuff with this utility, use the command-line option "-a"
 and provide explicit *datetime specification* or instead, simply set the to-do alarm time in Joplin.
