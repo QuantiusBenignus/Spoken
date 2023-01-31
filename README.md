@@ -64,13 +64,13 @@ For the aforementioned reasons, the scripts also expect to find the ASR model fi
 
 #### "INSTALLATION"
 *(Assuming whisper.cpp is available and the "main" executable compiled with 'make' in the cloned whisper.cpp repo. See Prerequisites section)*
-* Place the scripts **vm** and **td**  (or, for bash users, the renamed **vm.bash** and **td.bash**) somewhere in your PATH. 
+* Place the scripts **vm** and **td**  (or, for bash users, the scripts found in the "For_bash_users") somewhere in your PATH. 
 * Create a symbolic link (the code expects 'transcribe' in your PATH) to the compiled "main" executable in the whisper.cpp directory. For example, create it in your $HOME/bin> with 
 ```ln -s /full/path/to/whisper.cpp/main $HOME/bin/transcribe```.
 * Edit your personal NOTEBOOK_ID and AUTH_TOKEN variables in the code using the values from your Joplin app (see next section).  
 
 If you are using the GNOME integration (recommended), don't forget to:
-* Place `Whispers.desktop` in `$HOME/.local/share/applications/
+* Place `SpokenNotes.desktop` in `$HOME/.local/share/applications/
 * Replace USERNAME and YOURPROFILENAME in the file with your values.
 * Move the icon referenced in the .desktop file to the specified directory in $HOME/.local/...
 * Find "Whispers" in your Activities and click "Add to Favorites" to pin it to the dock
