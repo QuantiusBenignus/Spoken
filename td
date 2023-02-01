@@ -70,7 +70,7 @@ NOTEBOOK_ID="PLACE_HERE_NOTEBOOK_ID_FROM_JOPLIN_RIGHT_CLICK_ON_NOTEBOOK_NAME" #e
 AUTH_TOKEN="PLACE_HERE_TOKEN_FROM_JOPLIN_TOOLS_OPTIONS_WEB_CLIPPER_ADVANCED_OPTIONS"
 
 #Finally, the trigger word to isolate the datetime block in the text for the to-do notification/alarm
-keywrd="notification"   # pick a word that is pronounced clearly and is not too common. See td -h for use.
+keywrd="signal"   # pick a word that is pronounced clearly and is not too common. See td -h for use.
  
 #END OF USER CONFIGURATION BLOCK
 #--------------------------------------------------------------------------
@@ -218,6 +218,8 @@ else
  #The trigger word for setting an alarm for the to-do in Joplin is the last "$keywrd" in the transcribed text.
  #Get the transcribed text: 
  str="$(< $wf.txt)"
+ #Just the ones that are going to mess up our date parsing:
+ str="${str//[$'\t\r\n']}"
  str="${str:l}"
  keywrd="${keywrd:l}" # au cas ou
 
@@ -232,8 +234,12 @@ else
     str="${str/ weekend / Sun 1pm }"
     str="${str/ next weekend/ Sun 1pm +7day}"
     setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
+    #whisper needs a clear pause to produce 12:34 or 12.34 instead of 1234 but we can fight such unnatural speech:
+    str="${str/(#m)( [0-9][0-9][0-9] |( [0-9][0-9][0-9][0-9] )~( 202[3456] ))/$MATCH[1,$MEND-$MBEGIN-2]:$MATCH[$MEND-$MBEGIN-1,$MEND]}"
+    #the logic above is that you can schedule things up to year 2026 but cannot specify 20:23 to 20:26 as time. A compromise.
+    #and when it does produce 2.34 we convert it to 2:34:
     str="${str/(#m)[0-9].[0-9]/$MATCH[1]:$MATCH[3]}"
-    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# in the morning/$MATCH[1,$MEND-$MBEGIN-14]am}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([1-9]|10|11)(:[0-5][0-9])# in the morning/$MATCH[1,$MEND-$MBEGIN-14]am}"
     str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) [1-7](:[0-5][0-9])# in the afternoon/$MATCH[1,$MEND-$MBEGIN-16]pm}"
     str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# in the evening/$MATCH[1,$MEND-$MBEGIN-14]pm}"
     str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([1-3]|12)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]am}"
@@ -245,11 +251,11 @@ else
     str="${str/ before dawn/ 4am}"
     str="${str/ before dusk/ 5pm}"
     str="${str/ (early in the morning|early morning)/ 6am}"
-    str="${str/ tonight/ today 10pm}" #use alone or specify hour only, i.e. tonight OR 9pm NOT 9 tonight
-    str="${str/ morning/ 9am}"   #use alone or specify hour only, i.e. in the morning OR 6am NOT 6 in the morning 
-    str="${str/ evening/ 8pm}"   #use alone or use hour only, i.e. in the evening OR 9pm but NOT 9 in the evening
+    str="${str/ tonight/ today 10pm}"
+    str="${str/ morning/ 9am}"   #when used alone, i.e. in the morning NOT 6 in the morning 
+    str="${str/ evening/ 8pm}"   #used alone, i.e. in the evening NOT 9 in the evening
     str="${str/ afternoon/ 3pm}"  
-    str="${str/ after lunch / 2pm }"
+    str="${str/ after lunch / 1pm }"
     str="${str/ night / 11pm }"
     str="${str/ midnight/ +1day 12am}"
     str="${str/ (lunch time|lunch|noon) / 12pm }"
@@ -257,7 +263,7 @@ else
     str="${str/ dusk/ 7pm}"
     str="${str/ tea time/ 4pm}"      #Not only for tea drinkers, you can set this and others as custom times ...
     str="${str/ my time/ 5:45am}"    #... for example, if you are an early-rising jogger etc.
-    str="${str/ usual time/ 3:45pm}" #... another SECRET example, preserving privacy when speaking.
+    str="${str/ usual time/ 3:45pm}" #... another SECRET example, preserving privay when speaking.
     str="${str/ (in a couple of|in a few) / +2}"
     str="${str/ in several / +3}"
     str="${str/ (in a|in an) / next }"
