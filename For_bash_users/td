@@ -232,6 +232,34 @@ else
     str="${str/a.m. /am }"
     str="${str/ weekend / Sun 1pm }"
     str="${str/ next weekend/ Sun 1pm +7day}"
+#fix    #Some fixed dates:--------------
+    str="${str/christmas( day)#/ Dec 25th}"
+    str="${str/halloween/ Oct 31th}"
+    str="${str// Dec 25th}"
+    #western countries only:
+    str="${str/ easter( day)#/ $(ncal -e $dt[1])}"
+    str="${str/ easter monday/ $(ncal -e $dt[1]) +1day}"
+    str="${str/ good friday/ $(ncal -e $dt[1]) -2day}"
+    #greek/russian ortodox easter, uncomment this instead:  
+    #str="${str/ easter(| day)/$(ncal -o $dt[1])}"
+    str="${str/new year('s|'s day)/ Jan 1st}"
+    str="${str/ eve / -1day}"
+    #-------------------------------
+    setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
+    #whisper needs a clear pause to produce 12:34 or 12.34 instead of 1234 but we can fight such unnatural speech:
+    str="${str/(#m)( [0-9][0-9][0-9] |( [0-9][0-9][0-9][0-9] )~( 202[3456] ))/$MATCH[1,$MEND-$MBEGIN-2]:$MATCH[$MEND-$MBEGIN-1,$MEND]}"
+    #the logic above is that you can schedule things up to year 2026 but cannot specify 20:23 to 20:26 as time. A compromise.
+    #and when it does produce 2.34 we convert it to 2:34:
+    str="${str/(#m)[0-9].[0-9]/$MATCH[1]:$MATCH[3]}"
+    str="${str/(#m)?([ 123][0-9]?(rd|nd|st|th)?(,)| at| to|ast) ([1-9]|10|11)?(:[0-5][0-9]) in the morning/$MATCH[1,$MEND-$MBEGIN-14]am}"
+    str="${str/(#m)?([ 123][0-9]?(rd|nd|st|th)?(,)| at| to|ast) [1-7]?(:[0-5][0-9]) in the afternoon/$MATCH[1,$MEND-$MBEGIN-16]pm}"
+    str="${str/(#m)?([ 123][0-9]?(rd|nd|st|th)?(,)| at| to|ast) ([6-9]|10|11)?(:[0-5][0-9]) in the evening/$MATCH[1,$MEND-$MBEGIN-14]pm}"
+    str="${str/(#m)?([ 123][0-9]?(rd|nd|st|th)?(,)| at| to|ast) ([1-3]|12)?(:[0-5][0-9]) at night/$MATCH[1,$MEND-$MBEGIN-8]am}"
+    str="${str/(#m)?([ 123][0-9]?(rd|nd|st|th)?(,)| at| to|ast) (10|11)?(:[0-5][0-9]) at night/$MATCH[1,$MEND-$MBEGIN-8]pm}"
+    str="${str/(#m)?( at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# tonight/$MATCH[1,$MEND-$MBEGIN-7]pm}"
+    str="${str/(#m)tonight*([6-9]|10|11)(:[0-5][0-9])#/today $MATCH[9,$MEND]pm}"
+    unsetopt extendedglob
+#end fix the above needs to be translated to bash
     str="${str/ before noon/ 11am}"  
     str="${str/ before dawn/ 4am}"
     str="${str/ before dusk/ 5pm}"
@@ -295,7 +323,8 @@ else
 # Otherwise we will use the Joplin data API:
 # Let's prepare a JSON payload (in a temp file in memory) to pass to curl:
 # The Joplin API seems to currently ignore "todo_due" set on creation, but we need it for the uncollected notes. 
-echo -en '{ "title": "'$noted'", "todo_due": "'$adate'", "is_todo": "'1'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> - [ ] ' > $TEMPD/vmjson 
+uct="$(date +%s%3N)"
+echo -en '{ "title": "'$noted'", "user_created_time": "'$uct'", "todo_due": "'$adate'", "is_todo": "'1'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> - [ ] ' > $TEMPD/vmjson 
 # In my case parent_id is the Joplin id of a notebook named VoiceMemos  
 str="$(< $wf.txt)"
 str="${str//[$'\n']}"  # for proper json, needed by jq when retrieving uncollected  

@@ -180,7 +180,8 @@ if [[ $clip ]]; then
 else
 # Otherwise we will use the Joplin data API:
 # Let's prepare a JSON payload (in a temp file in memory) to pass to curl: 
-echo -en '{ "title": "'$noted'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> ' > $TEMPD/vmjson 
+uct="$(date +%s%3N)"
+echo -en '{ "title": "'$noted'", "user_created_time": "'$uct'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> ' > $TEMPD/vmjson 
 # In my case parent_id is the Joplin id of a notebook named VoiceMemos  
 str="$(< $wf.txt)"
 # If Whisper detected non-speech events such as (wind blowing): 
