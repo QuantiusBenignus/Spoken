@@ -168,38 +168,36 @@ done
 
 for af in ${audio_files[@]}; do
 if [[ -r $af ]]; then 
-   echo -e '>>>>>>>>>>>>>>>>\n Loading audio from file...'$af'\n>>>>>>>>>>>>>>>\n'
+   echo -e '------------------  Loading audio from file...'$af'  ------------------\n'
 # Here we are tasking sox with error handling:
    sox $af -t wav $af.wav channels 1 rate 16k norm
    wavs=("${wavs[@]}" "$TEMPD/$af.wav")  
 else
-   echo -e '>>>>>>>>>>>>>>>>\n File '$af' cannot be read !!!\n>>>>>>>>>>>>>>>\n'
+   echo -e '+++++++++++++++++++  File '$af' cannot be read!  +++++++++++++++++++\n'
    show_help
 fi
 done
 
 if [[ ( ${#wavs[@]} -eq 0 ) ]]; then
 # sox typically requires user input (CTRL-C) to stop recording from the microphone, this prevents the script from "overreacting":
-   trap "echo -e '>>>>>>>>>>>>>>>>\n Done recording\n>>>>>>>>>>>>>>>\n'" SIGINT
+   trap "echo -e '--------------------  Done recording  -------------------\n'" SIGINT
 # recording in wav format at 16k rate, the only currently accepted by whisper.cpp:
 # Attempts to stop on silence of 3s with threshold of 4%, if in doubt press CTRL-C: 
    rec -t wav $ramf rate 16k channels 1 silence 1 0.1 3% 1 3.6 3%
    wavs=("${wavs[@]}" "$ramf")     
 fi
 
-# Let's ping the server to see if the REST API is available (if not, store the json payload for later):
-[[ $(curl http://localhost:41184/ping) == 'JoplinClipperServer' ]] && apiup="1"   
-
 for wf in ${wavs[@]}; do   
 # To-Do alarm trigger datetime:
 unset adate
 # Warning for date parse failure
 unset BWARND
-echo -e '>>>>>>>>>>>>>>>>\n Now transcribing...\n>>>>>>>>>>>>>>>\n'
+echo -e '--------------------  Now transcribing..........................\n'
 # transcribe is a symbolic link (somewhere in your path) to the compiled "main" executable in the whisper.cpp directory.
 # For example: in your ~/bin> create it with `ln -s /full/path/to/whisper.cpp/main $HOME/bin/transcribe`
 # The transcribed text is stored in a file (-otxt), in this case /dev/shm/vmfile.txt 
 transcribe -t $NTHR -pc -nt -m $model -f $wf -otxt
+echo -e '..................... Done transcribing!  -----------------------\n'
 
 # For tracking the time of creation of notes:
 noted="$(date +%Y-%m-%dT%T)" #ISO-8601-ish.
@@ -222,85 +220,131 @@ else
  str="${str//[$'\t\r\n']}"
  str="${str:l}"
  keywrd="${keywrd:l}" # au cas ou
-
  #Isolate the time reference and remove possible vagueness 
- #(Being vague lets the program choose, oppinionated but adjustable. Only the future considered) 
+ #(, oppinionated but adjustable. Only the future considered) 
  if [[ $str == *"$keywrd"* ]] ; then
-    dt=($(date +%Y%n%_m%n%e%n%u%n%k))  #this is work in progress, improvements imminent:-)
+    dt=($(date +%Y%n%_m%n%e%n%u%n%k))
     #dt[1]=y, dt[2]=m, dt[3]=d, dt[4]=dw, dt[5]=h
     str="${str##*$keywrd}"
-    str="${str/p.m. /pm }"
-    str="${str/a.m. /am }"
-    str="${str/ weekend / Sun 1pm }"
+    str=" $str "
+    for stw in "." "," "?" "!" ";" "'"; do ; str="${str//$stw}" ; done
+    #keep the number stuck to its unit so that one can say "3rd of March at 22 hours 30 minutes":
+    str="${str/ hour(s|)/hour}"
+    str="${str/ minute(s|)/minute}"
+    str="${str/ seconds/seconds}"
+    #whisper transcribes these to alph. when time context unclear:
+    str="${str/ nine/ 9}" 
+    str="${str/ eight/ 8}"
+    str="${str/ seven/ 7}"
+    str="${str/ six/ 6}"
+    str="${str/ five/ 5}"
+    str="${str/ four/ 4}"
+    str="${str/ three/ 3}"
+    str="${str/ two/ 2}"
+    str="${str/ one/ 1}"
+    str="${str/ first/ 1}"  # the other ordinals seems to behave in whisper
     str="${str/ next weekend/ Sun 1pm +7day}"
+    str="${str/ weekend/ Sun 1pm}"
     setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
+    #Some fixed dates:--------------
+    yr="$dt[1]"
+    #Extract the year if present (for the floaters like easter etc., look in the future)
+    for st in "${=str//[^0-9]##/ }"; do ; yr=$(( st > yr ? st : yr )) ; done
+    str="${str/(#m) next (christ|hallow|thanks|easter|valent)/ +1year $MATCH[7,$MEND]}"
+    str="${str/ christmas( day|)/ Dec 25th }"
+    str="${str/ halloween/ Oct 31st}"
+    str="${str/ (st. |saint |)valentine('s day|'s|)/ Feb 14th }"
+    # US of A:
+    str="${str/ thanksgiving( day|)/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7))}"
+    str="${str/ cyber monday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +4day}"
+    str="${str/ black friday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +1day}"
+    # Canada:
+    str="${str/ boxing day/ Dec 26th }"
+    str="${str/ canada day/ July 1st}"
+    #western countries only:
+    eas="$(ncal -e $yr)"
+    str="${str/ easter/ $eas}"
+    str="${str/ easter monday/ $eas +1day}"
+    str="${str/ good friday/ $eas -2day}"
+    #greek/russian ortodox easter, uncomment this instead:  
+    #str="${str/ easter(| day)/$(ncal -o $eas)}"
+    str="${str/ new year(s|\'s|\'s day)#/ Jan 1st}"
+    str="${str/ eve / -1day }"
+    #-------------------------------
     #whisper needs a clear pause to produce 12:34 or 12.34 instead of 1234 but we can fight such unnatural speech:
-    str="${str/(#m)( [0-9][0-9][0-9] |( [0-9][0-9][0-9][0-9] )~( 202[3456] ))/$MATCH[1,$MEND-$MBEGIN-2]:$MATCH[$MEND-$MBEGIN-1,$MEND]}"
-    #the logic above is that you can schedule things up to year 2026 but cannot specify 20:23 to 20:26 as time. A compromise.
-    #and when it does produce 2.34 we convert it to 2:34:
+    str="${str/(#m)( [0-9][0-5][0-9] | 1[0-9][0-5][0-9] )/$MATCH[1,$MEND-$MBEGIN-2]:$MATCH[$MEND-$MBEGIN-1,$MEND]}"
+    #the logic above being that you can specify this way the time up to 19:59 (1959). A compromise.
+    #If one wants to say 20:xx  and later (transcribed as 20xx without the exag. pause) they can say "20 hours xx minutes".
+    #when it does produce 2.34 we convert it to 2:34:
     str="${str/(#m)[0-9].[0-9]/$MATCH[1]:$MATCH[3]}"
-    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([1-9]|10|11)(:[0-5][0-9])# in the morning/$MATCH[1,$MEND-$MBEGIN-14]am}"
-    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) [1-7](:[0-5][0-9])# in the afternoon/$MATCH[1,$MEND-$MBEGIN-16]pm}"
-    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# in the evening/$MATCH[1,$MEND-$MBEGIN-14]pm}"
-    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) ([1-3]|12)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]am}"
-    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast) (10|11)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]pm}"
-    str="${str/(#m)( at| to|ast)# ([6-9]|10|11)(:[0-5][0-9])# tonight/$MATCH[1,$MEND-$MBEGIN-7]pm}"
-    str="${str/(#m)tonight*([6-9]|10|11)(:[0-5][0-9])#/today $MATCH[9,$MEND]pm}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# ([1-9]|10|11)(:[0-5][0-9])# in the morning/$MATCH[1,$MEND-$MBEGIN-14]am}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# [1-7](:[0-5][0-9])# in the afternoon/$MATCH[1,$MEND-$MBEGIN-16]pm}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# ([6-9]|10|11)(:[0-5][0-9])# in the evening/$MATCH[1,$MEND-$MBEGIN-14]pm}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# ([1-3]|12)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]am}"
+    str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# (10|11)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]pm}"
+    str="${str/(#m)( at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# tonight/$MATCH[1,$MEND-$MBEGIN-7]pm}"
+    str="${str/(#m)tonight(,| at)# ([6-9]|10|11)(:[0-5][0-9])#/today $MATCH[9,$MEND]pm}"
+    str="${str/(#m) (1|2|)[0-9] to / -$MATCH[1,$MEND-$MBEGIN-3]min }"
+    str="${str/(#m) (1|2|)[0-9] past / +$MATCH[1,$MEND-$MBEGIN-5]min }"
     unsetopt extendedglob
-    str="${str/ before noon/ 11am}"  
-    str="${str/ before dawn/ 4am}"
-    str="${str/ before dusk/ 5pm}"
-    str="${str/ (early in the morning|early morning)/ 6am}"
-    str="${str/ tonight/ today 10pm}"
-    str="${str/ morning/ 9am}"   #when used alone, i.e. in the morning NOT 6 in the morning 
-    str="${str/ evening/ 8pm}"   #used alone, i.e. in the evening NOT 9 in the evening
-    str="${str/ afternoon/ 3pm}"  
-    str="${str/ after lunch / 1pm }"
-    str="${str/ night / 11pm }"
-    str="${str/ midnight/ +1day 12am}"
-    str="${str/ (lunch time|lunch|noon) / 12pm }"
-    str="${str/ dawn/ 6am}"
-    str="${str/ dusk/ 7pm}"
-    str="${str/ tea time/ 4pm}"      #Not only for tea drinkers, you can set this and others as custom times ...
-    str="${str/ my time/ 5:45am}"    #... for example, if you are an early-rising jogger etc.
-    str="${str/ usual time/ 3:45pm}" #... another SECRET example, preserving privay when speaking.
-    str="${str/ (in a couple of|in a few) / +2}"
-    str="${str/ in several / +3}"
-    str="${str/ (in a|in an) / next }"
+    str="${str/ couple/ +2}"
+    str="${str/ dozen/ +12}"
+    str="${str/ decade/ +10year}"
+    str="${str/ (several|few)/ +3}"
     str="${str/ quarter to / -15min }"
     str="${str/ quarter past / +15min }"
     str="${str/ half past / +30min }"
+    str="${str/ morning/ 9am}"   #when used alone, i.e. in the morning NOT 6 in the morning 
+    str="${str/ evening/ 8pm}"   #used alone, i.e. in the evening NOT 9 in the evening
+    str="${str/ before noon/ 11am}"  
+    str="${str/ (early in the morning|early morning)/ 6am}"
+    str="${str/ tonight/ 10pm}"
+    str="${str/ afternoon/ 3pm}"  
+    str="${str/ after lunch/ 1pm}"
+    str="${str/ night / 11pm}"
+    str="${str/ midnight/ 12:59:59pm}"
+    str="${str/ (lunch time|lunch|noon)/ 12pm}"
+    str="${str/ tea time/ 4pm}"      #Not only for tea drinkers, you can set this and others as custom times ...
+    str="${str/ my time/ 5:45am}"    #... for example, if you are an early-rising jogger etc.
+    str="${str/ usual time/ 3:45pm}" #... another SECRET example, preserving privacy when speaking.
+    # These could be precise but will need the parsed date and Lat. and TZ or external tools: 
     str="${str/ (during|around|just before) sunrise/ 6:30am}"
     str="${str/ (during|around|just before) sunset/ 7:30pm}"
-    #whisper detected non-speech events such as (wind blowing): 
+    str="${str/ dawn/ 5:30am}"
+    str="${str/ dusk/ 7:30pm}"
+    str="${str/ before dawn/ 4:30am}"
+    #whisper detected non-speech events such as "(wind blowing)" or "[BLANK_AUDIO]": 
     str="${str/\(*\)}"   
     str="${str/\[*\]}"    
-    #Remove the leftover ballast (stop)  words:
-    for stw in " is " " set " " for " " from " " to " " in " " on " " at " " of " " the " "." "," "?" " and " "st " "nd " "rd " "th " " o'clock "
+    #Remove the leftover ballast (stop) words and symbols:
+    for stw in " is " " set " " for " " from " " to " " in " " on " " at " " of " " the " " a " " an " " and " "st " "nd " "rd " "th " " o'clock"
     do
     str="${str//$stw/ }"
     done
     #fix what we may have broken:-)
     str="${str/ augu / august }"
-    str="${str/ mon / month }" #assuming you didn't say something like "next mon" instead of "next monday"
+    str="${str/ mon / month }"
+    unset yr eas dt
     #If you skip the year in a spoken, non-relative time reference, the current year will be assumed:
     #if [[ $str != *20[1-9][0-9]* ]] && [[ $str != *" this year"* ]]; then str="this year "$str; fi
  fi
- echo "Datetime: "$str 
  adate=$(date -d "$str" +%s%3N) || { BWARND="DATE PARSING FAILED!! " ; adate=0; }
- echo "Alarm set for: "$adate
-        
+ echo "Alarm set for: "$str"  =>  "$adate        
 fi
  
 # If clipboard flag is set, we dump everything in the clipboard (make sure xsel is installed, e.g. apt install xsel):
 if [[ $clip ]]; then 
    echo -en '>Created on '$noted$([[ $adate ]] && echo ", ( Revisit: $adate )")':\n>- [ ] ' | cat - $wf.txt | xsel -bi 
-   echo -e ">>>>>>>>>>>>>>>\n Copied to clipboard!\n>>>>>>>>>>>>>>>\n"
+   echo -e "-------------------  Copied to clipboard!  --------------------\n"
 else
 # Otherwise we will use the Joplin data API:
+# Let's ping the server to see if the REST API is available (if not, store the json payload for later):
+[[ $(curl --no-progress-meter http://localhost:41184/ping) == 'JoplinClipperServer' ]] && apiup="1"   
+
 # Let's prepare a JSON payload (in a temp file in memory) to pass to curl:
 # The Joplin API seems to currently ignore "todo_due" set on creation, but we need it for the uncollected notes. 
-echo -en '{ "title": "'$noted'", "todo_due": "'$adate'", "is_todo": "'1'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> - [ ] ' > $TEMPD/vmjson 
+uct="$(date +%s%3N)"
+echo -en '{ "title": "'$noted'", "user_created_time": "'$uct'", "todo_due": "'$adate'", "is_todo": "'1'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> - [ ] ' > $TEMPD/vmjson 
 # In my case parent_id is the Joplin id of a notebook named VoiceMemos  
 str="$(< $wf.txt)"
 str="${str//[$'\n']}"  # for proper json, needed by jq when retrieving uncollected  
@@ -314,8 +358,8 @@ if [[ $apiup ]]; then
    # Need to do a bit extra work to set "todo_due" (alarm) via PUT once the note is created. A limitation of the API.
    url="http://localhost:41184/notes/"$(jq -j '.id' $TEMPD/vm-curlout)"?token="$AUTH_TOKEN
    curl -X PUT -o $TEMPD/vmPUT-curlout --no-progress-meter --data '{"todo_due": "'$adate'"}' $url
-   echo -e '>>>>>>>>>>>>>>>>\n New to-do note created!\n>>>>>>>>>>>>>>>\n'
-   echo -e $BWARND
+   echo -e '\n--------------------  New to-do note created!  -----------------------'
+   echo $BWARND
    # You should find the newly created to-do (with the timestamp for a title and alarm set fo adate) in the notebook of your choice.
 else
    cp $TEMPD'/vmjson' $JOPLIND'/'$noted'td_uncollected.json' 
