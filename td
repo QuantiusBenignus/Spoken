@@ -255,9 +255,10 @@ else
     str="${str/ halloween/ Oct 31st}"
     str="${str/ (st. |saint |)valentine('s day|'s|)/ Feb 14th }"
     # US of A:
-    str="${str/ thanksgiving( day|)/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7))}"
-    str="${str/ cyber monday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +4day}"
-    str="${str/ black friday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +1day}"
+    let "tday=28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7"
+    str="${str/ thanksgiving( day|)/ Nov $tday}"
+    str="${str/ cyber monday/ Nov $tday +4day}"
+    str="${str/ black friday/ Nov $tday +1day}"
     # Canada:
     str="${str/ boxing day/ Dec 26th }"
     str="${str/ canada day/ July 1st}"
