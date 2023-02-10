@@ -51,12 +51,13 @@ TEMPD='/dev/shm'
 model="$TEMPD/ggml-tiny.en.bin"
 #If Joplin is not running, store transcribed notes in Joplin config. directory for later processing. 
 JOPLIND=$HOME'/.config/joplin-desktop/resources'  #of course you can choose another place.
+#JOPLIND=$HOME'/.config/joplin-desktop/tmp'  #a better option? Need to check its function in Joplin.
 #[ -v $ramf ] || ramf="$(mktemp -p /dev/shm/ vmXXXX)"
 # Hardcoded temp wav file to store the voice memo and get overwritten every time (in RAM):
 ramf="$TEMPD/vmfile"
 
 #Set the number of processing threads for whisper.cpp inference (adjust for your case):
-NTHR=2
+NTHR=4
 #It seems that the optimum number of transcribe threads should equal CPU processing cores:
 #NTHR="$(( $(lscpu | awk '/^Socket\(s\)/{ print $2 }') * $(lscpu | awk '/^Core\(s\) per socket/{ print $4 }') ))"
 
