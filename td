@@ -79,7 +79,7 @@ keywrd="signal"   # pick a word that is pronounced clearly and is not too common
 unset clip
 # Is the Joplin data API up:
 unset apiup
-
+[[ $options[extended_glob] == off ]] && eglob=1
 
 show_help() {
 echo -e "\n   .~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~."
@@ -245,7 +245,7 @@ else
     str="${str/ first/ 1}"  # the other ordinals seems to behave in whisper
     str="${str/ next weekend/ Sun 1pm +7day}"
     str="${str/ weekend/ Sun 1pm}"
-    setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
+    [[ $eglob ]] && setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
     #Some fixed dates:--------------
     yr="$dt[1]"
     #Extract the year if present (for the floaters like easter etc., look in the future)
@@ -255,10 +255,9 @@ else
     str="${str/ halloween/ Oct 31st}"
     str="${str/ (st. |saint |)valentine('s day|'s|)/ Feb 14th }"
     # US of A:
-    let "tday=28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7"
-    str="${str/ thanksgiving( day|)/ Nov $tday}"
-    str="${str/ cyber monday/ Nov $tday +4day}"
-    str="${str/ black friday/ Nov $tday +1day}"
+    str="${str/ thanksgiving( day|)/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7))}"
+    str="${str/ cyber monday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +4day}"
+    str="${str/ black friday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +1day}"
     # Canada:
     str="${str/ boxing day/ Dec 26th }"
     str="${str/ canada day/ July 1st}"
@@ -284,10 +283,9 @@ else
     str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# ([1-3]|12)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]am}"
     str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# (10|11)(:[0-5][0-9])# at night/$MATCH[1,$MEND-$MBEGIN-8]pm}"
     str="${str/(#m)( at| to|ast) ([6-9]|10|11)(:[0-5][0-9])# tonight/$MATCH[1,$MEND-$MBEGIN-7]pm}"
-    str="${str/(#m)tonight(,| at)# ([6-9]|10|11)(:[0-5][0-9])#/today $MATCH[9,$MEND]pm}"
+    str="${str/(#m)tonight(,| at| for)# ([6-9]|10|11)(:[0-5][0-9])#/today $MATCH[9,$MEND]pm}"
     str="${str/(#m) (1|2|)[0-9] to / -$MATCH[1,$MEND-$MBEGIN-3]min }"
     str="${str/(#m) (1|2|)[0-9] past / +$MATCH[1,$MEND-$MBEGIN-5]min }"
-    unsetopt extendedglob
     str="${str/ couple/ +2}"
     str="${str/ dozen/ +12}"
     str="${str/ decade/ +10year}"
@@ -325,12 +323,22 @@ else
     #fix what we may have broken:-)
     str="${str/ augu / august }"
     str="${str/ mon / month }"
-    unset yr eas dt
+    str="${str/pm[ ]#pm/pm}" #said tonight at 10pm instead of tonight at 10.
+    str="${str/am[ ]#am/am}"
+    [[ $eglob ]] && unsetopt extendedglob
     #If you skip the year in a spoken, non-relative time reference, the current year will be assumed:
     #if [[ $str != *20[1-9][0-9]* ]] && [[ $str != *" this year"* ]]; then str="this year "$str; fi
  fi
  adate=$(date -d "$str" +%s%3N) || { BWARND="DATE PARSING FAILED!! " ; adate=0; }
+ #All our dates are in the future:
+ uct="$(date +%s%3N)"
+ yr=$((dt[1]+1))
+ if [[ uct -gt adate ]]; then
+    adate=$(( uct - adate < 86400000 ? adate + 86400000 : $(date -d "$str +1year" +%s%3N) ))
+ #adate + 31556952000 + (!(yr % 4) && ( yr % 100 || !( yr % 400) ))*86400000 ))
+ fi 
  echo "Alarm set for: "$str"  =>  "$adate        
+ unset yr eas dt
 fi
  
 # If clipboard flag is set, we dump everything in the clipboard (make sure xsel is installed, e.g. apt install xsel):
@@ -341,10 +349,9 @@ else
 # Otherwise we will use the Joplin data API:
 # Let's ping the server to see if the REST API is available (if not, store the json payload for later):
 [[ $(curl --no-progress-meter http://localhost:41184/ping) == 'JoplinClipperServer' ]] && apiup="1"   
-
+uct="$(date +%s%3N)"
 # Let's prepare a JSON payload (in a temp file in memory) to pass to curl:
 # The Joplin API seems to currently ignore "todo_due" set on creation, but we need it for the uncollected notes. 
-uct="$(date +%s%3N)"
 echo -en '{ "title": "'$noted'", "user_created_time": "'$uct'", "todo_due": "'$adate'", "is_todo": "'1'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> - [ ] ' > $TEMPD/vmjson 
 # In my case parent_id is the Joplin id of a notebook named VoiceMemos  
 str="$(< $wf.txt)"
