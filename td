@@ -227,7 +227,10 @@ else
     #dt[1]=y, dt[2]=m, dt[3]=d, dt[4]=dw, dt[5]=h
     str="${str##*$keywrd}"
     str=" $str "
-    for stw in "." "," "?" "!" ";" "'"; do ; str="${str//$stw}" ; done
+    [[ $eglob ]] && setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
+    #whisper detected non-speech events such as "(wind blowing)" or "[BLANK_AUDIO]": 
+    str="${str/\(*\)}"   
+    str="${str/\[*\]}"    
     #keep the number stuck to its unit so that one can say "3rd of March at 22 hours 30 minutes":
     str="${str/ hour(s|)/hour}"
     str="${str/ minute(s|)/minute}"
@@ -245,7 +248,6 @@ else
     str="${str/ first/ 1}"  # the other ordinals seems to behave in whisper
     str="${str/ next weekend/ Sun 1pm +7day}"
     str="${str/ weekend/ Sun 1pm}"
-    [[ $eglob ]] && setopt extendedglob  #To cover some serious ground, while avoiding (most of) the mines:
     #Some fixed dates:--------------
     yr="$dt[1]"
     #Extract the year if present (for the floaters like easter etc., look in the future)
@@ -267,7 +269,7 @@ else
     str="${str/ easter monday/ $eas +1day}"
     str="${str/ good friday/ $eas -2day}"
     #greek/russian ortodox easter, uncomment this instead:  
-    #str="${str/ easter(| day)/$(ncal -o $eas)}"
+    #str="${str/ easter(| day)/$(ncal -o $yr)}"
     str="${str/ new year(s|\'s|\'s day)#/ Jan 1st}"
     str="${str/ eve / -1day }"
     #-------------------------------
@@ -293,51 +295,47 @@ else
     str="${str/ quarter to / -15min }"
     str="${str/ quarter past / +15min }"
     str="${str/ half past / +30min }"
+    str="${str/ (early in the morning|early morning)/ 6am}"
     str="${str/ morning/ 9am}"   #when used alone, i.e. in the morning NOT 6 in the morning 
     str="${str/ evening/ 8pm}"   #used alone, i.e. in the evening NOT 9 in the evening
     str="${str/ before noon/ 11am}"  
-    str="${str/ (early in the morning|early morning)/ 6am}"
     str="${str/ tonight/ 10pm}"
     str="${str/ afternoon/ 3pm}"  
     str="${str/ after lunch/ 1pm}"
+    str="${str/ after work/ 6pm}"
     str="${str/ night / 11pm}"
-    str="${str/ midnight/ 12:59:59pm}"
+    str="${str/ midnight/ 11:59:59pm}"
     str="${str/ (lunch time|lunch|noon)/ 12pm}"
+    str="${str/ breakfast/ 7am}"  
     str="${str/ tea time/ 4pm}"      #Not only for tea drinkers, you can set this and others as custom times ...
     str="${str/ my time/ 5:45am}"    #... for example, if you are an early-rising jogger etc.
     str="${str/ usual time/ 3:45pm}" #... another SECRET example, preserving privacy when speaking.
     # These could be precise but will need the parsed date and Lat. and TZ or external tools: 
-    str="${str/ (during|around|just before) sunrise/ 6:30am}"
-    str="${str/ (during|around|just before) sunset/ 7:30pm}"
+    str="${str/ (during|around|just before) sunrise/ 6:10am}"
+    str="${str/ (during|around|just before) sunset/ 6:30pm}"
     str="${str/ dawn/ 5:30am}"
     str="${str/ dusk/ 7:30pm}"
     str="${str/ before dawn/ 4:30am}"
-    #whisper detected non-speech events such as "(wind blowing)" or "[BLANK_AUDIO]": 
-    str="${str/\(*\)}"   
-    str="${str/\[*\]}"    
     #Remove the leftover ballast (stop) words and symbols:
-    for stw in " is " " set " " for " " from " " to " " in " " on " " at " " of " " the " " a " " an " " and " "st " "nd " "rd " "th " " o'clock"
-    do
-    str="${str//$stw/ }"
-    done
+    #str="${str// time | is | set | for | from | to | in | on | at | of | the | and | an | a |st |nd |rd |th | o'clock / }"
+    for stw in " is " " set " " for " " from " " to " " in " " on " " at " " of " " the " " and " " an " " a " "st " "nd " "rd " "th " " o'clock " ; do ; str="${str//$stw/ }" ; done
+    str="${str//[[:punct:]]~[':-+']}"
     #fix what we may have broken:-)
     str="${str/ augu / august }"
     str="${str/ mon / month }"
     str="${str/pm[ ]#pm/pm}" #said tonight at 10pm instead of tonight at 10.
     str="${str/am[ ]#am/am}"
     [[ $eglob ]] && unsetopt extendedglob
-    #If you skip the year in a spoken, non-relative time reference, the current year will be assumed:
-    #if [[ $str != *20[1-9][0-9]* ]] && [[ $str != *" this year"* ]]; then str="this year "$str; fi
  fi
  adate=$(date -d "$str" +%s%3N) || { BWARND="DATE PARSING FAILED!! " ; adate=0; }
  #All our dates are in the future:
- uct="$(date +%s%3N)"
- yr=$((dt[1]+1))
- if [[ uct -gt adate ]]; then
+ if [[ adate -gt 0 ]]; then
+  uct="$(date +%s%3N)"
+  if [[ uct -gt adate ]]; then
     adate=$(( uct - adate < 86400000 ? adate + 86400000 : $(date -d "$str +1year" +%s%3N) ))
- #adate + 31556952000 + (!(yr % 4) && ( yr % 100 || !( yr % 400) ))*86400000 ))
- fi 
- echo "Alarm set for: "$str"  =>  "$adate        
+  fi 
+ echo "Alarm set for: ("$str")  =>  "$adate        
+ fi
  unset yr eas dt
 fi
  
