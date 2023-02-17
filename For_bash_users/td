@@ -239,10 +239,6 @@ else
         str="${str//$stw}" 
 echo "$str"
       done
-    #keep the number stuck to its unit so that one can say "3rd of March at 22 hours 30 minutes":
-    str="${str/ hour(s|)/hour}"
-    str="${str/ minute(s|)/minute}"
-    str="${str/ seconds/seconds}"
     #whisper transcribes these to alph. when time context unclear:
     str="${str/ nine/ 9}" 
     str="${str/ eight/ 8}"
@@ -269,9 +265,9 @@ echo "$str"
     str="${str/ halloween/ Oct 31st}"
     str="${str/ (st. |saint |)valentine('s day|'s|)/ Feb 14th }"
     # US of A:
-    str="${str/ thanksgiving( day|)/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7))}"
-    str="${str/ cyber monday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +4day}"
-    str="${str/ black friday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +1day}"
+    str="${str/ thanksgiving( day|)/ Nov $((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7))}"
+    str="${str/ cyber monday/ Nov $((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +4day}"
+    str="${str/ black friday/ Nov $((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +1day}"
     # Canada:
     str="${str/ boxing day/ Dec 26th }"
     str="${str/ canada day/ July 1st}"
@@ -281,7 +277,7 @@ echo "$str"
     str="${str/ easter monday/ $eas +1day}"
     str="${str/ good friday/ $eas -2day}"
     #greek/russian ortodox easter, uncomment this instead:  
-    #str="${str/ easter(| day)/$(ncal -o $eas)}"
+    #str="${str/ easter(| day)/$(ncal -o $yr)}"
     str="${str/ new year?(s|\'s|\'s day)/ Jan 1st}"
     str="${str/ eve / -1day }"
     #-------------------------------
