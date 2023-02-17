@@ -81,48 +81,51 @@ unset clip
 unset apiup
 [[ $options[extended_glob] == off ]] && eglob=1
 
-show_help() {
-echo -e "\n   .~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~."
-echo -e "   |  td - Create a Joplin to-do task and set notification via speech. |"
-echo -e "   |    A showcase of the built-in power of the Linux command line.    |"
-echo -e "   *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*\n"
-echo " Records a voice memo from the microphone or uses audio file(s) as the input." 
-echo " Transcribes each input (using whisper.cpp, a C/C++ port of OpenAI's Whisper engine) into text"
-echo -e " formated as to-do task for the desktop version of the Joplin note-taking app and \n either:" 
-echo "   - creates a new to-do note/task in a running instance of the Joplin app or"
-echo "   - sends it to the clipboard for insertion in an existing Joplin note as inline to-do"
-echo -e "   - if Joplin is not running, stores the transcription in a file for later collection\n" 
+show_help() {	
+cat << EOF
 
-echo -e " SYNOPSIS: td [-b|-c|-bc|-cb|--help|-h|-a datetimespec] ... [filename(s)]\n"
+             .~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.
+             |  td - Create a Joplin to-do task and set notification via speech. |
+             |    A showcase of the built-in power of the Linux command line.    |
+             *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
+    Records a voice memo from the microphone or uses audio file(s) as the input. 
+    Transcribes each input (using whisper.cpp, a C/C++ port of OpenAI's Whisper engine) into text
+    formated as to-do task for the desktop version of the Joplin note-taking app and either: 
+      - creates a new to-do note/task in a running instance of the Joplin app or
+      - sends it to the clipboard for insertion in an existing Joplin note as inline to-do
+      - if Joplin is not running, stores the transcription in a file for later collection 
 
-echo "   - 'td' use the default 'tiny' whisper.cpp ASR model file and create a to-do note in Joplin" 
-echo "   - 'td -h|--help' will print this text" 
-echo "   - 'td -b|--base' transcribes to a Joplin to-do using the larger (more accurate but slower) 'base' model"
-echo "   - 'td -c|--clip' will transcribe and send the text to the clipboard"
-echo "   - 'td -a|--alarm datetimespec' will create a to-do task with alarm set to trigger on 'datetimespec'"
-echo "   - 'td -bc' , 'td -cb' , 'td -[cb]a datetimespec' etc. - valid compound options are acceptable"
-echo -e "   - any and all non-option arguments are treated as input audio files to be converted\n"
+    SYNOPSIS: td [-b|-c|-bc|-cb|--help|-h|-a datetimespec] ... [filename(s)]
 
-echo 'If explicit datetime is not supplied, the transcribed text is parsed for a valid notification/alarm datetime.'  
-echo 'It is quite difficult for computers to parse our spoken time references and using only built-in tools'
-echo '(i.e. date -d from coreutils) presents a huge challenge when parsing arbitrary datetime text.'
-echo 'There are dedicated, complex NLP tools that work better but they are not perfect either.' 
-echo -e 'A keyword set to the last "'"$keywrd"'" in the transcribed text is used to isolate the time reference:'
-echo 'EXAMPLES: --------------------->'
-echo '"Need to see my dentist next week. Set '"$keywrd"' for Tuesday"       - this is valid.'
-echo '"Scheduled a company meeting with '"$keywrd"' for 2023/5/24 at 8pm"   - also OK.'
-echo '"Besides each morning noitification, I also set one '"$keywrd"' for March the 3rd in the evening."  -OK'
-echo '       ( "...'"$keywrd"' for next week"'
-echo 'Also   | "...'"$keywrd"' in 3 hours"'
-echo 'valid: { "...'"$keywrd"' tomorrow morning"  (see source code for "morning" & other adjustable definitions)'
-echo '       | "...'"$keywrd"' in 33 hours and 5 minutes"'
-echo '       ( "...'"$keywrd"' ninth month +1000 seconds"'
-echo 'Custom:  "...'"$keywrd"' at the usual time" allows privacy and customization (see code for ideas)'
-echo 'Speaking literaly "YYYY/MM/DD", followed by time (if needed) e.g. "2024 slash 5 slash 23 at 1pm" works well.'
-echo 'As a minimum, the month should precede the date and time, e.g. "March 12" not "12 of March"'
-echo 'In some edge cases, successful parsing gives incorrect datetime. Some practice needed to avoid those'
-echo 'For scheduling critically-important stuff with this utility, use the command-line option "-a"' 
-echo 'and provide explicit datetimespec or instead, simply set the to-do alarm time in Joplin.'
+      - 'td' use the default "tiny" whisper.cpp ASR model file and create a to-do note in Joplin 
+      - 'td -h|--help' will print this text
+      - 'td -b|--base' transcribes a Joplin to-do using the larger (more accurate but slower) "base" model
+      - 'td -c|--clip' will transcribe and send the text to the clipboard
+      - 'td -a|--alarm datetimespec' will create a to-do task with alarm set to trigger on "datetimespec"
+      - 'td -bc' , 'td -cb' , 'td -[cb]a datetimespec' etc. - valid compound options are acceptable
+      - any and all non-option arguments are treated as input audio files to be converted
+
+    If explicit datetime not supplied, transcribed text is parsed for a valid notification/alarm datetime.  
+    It is quite difficult for computers to parse our spoken time references and using only built-in tools
+    (i.e. date -d from coreutils) presents a huge challenge when parsing arbitrary datetime text.
+    There are dedicated, complex NLP tools that work better but they are not perfect either. 
+    A keyword set to the last "$keywrd" in the transcribed text is used to isolate the time reference:
+
+    EXAMPLES: --------------------->
+      "Need to see my dentist next week. Set $keywrd for Tuesday"       - this is valid.
+      "Scheduled a company meeting with $keywrd for 2023-5-24 at 8pm"   - also OK.
+      "Besides each morning noitification, I also set one $keywrd for March the 3rd in the evening."  -OK.
+             ( "... $keywrd for next week"
+      Also   | "... $keywrd in 3 hours"
+      valid: { "... $keywrd tomorrow morning"  (see source code for "morning" & other adjustable definitions)
+             | "... $keywrd in 33 hours and 5 minutes"
+             ( "... $keywrd on Thanksgiving day in 15 years"
+      Custom:  "... $keywrd at the usual time" allows privacy and customization (see code for ideas)
+    Speaking literaly "YYYY-MM-DD", followed by time (if needed) e.g. "2024 dash 5 dash 23 at 1pm" works well.
+    In some edge cases, successful parsing gives incorrect datetime. Some practice needed to avoid those.
+    For scheduling critically-important stuff with this utility, use the command-line option "-a" 
+    and provide explicit datetimespec or instead, simply set the to-do alarm time in Joplin.
+EOF
 #    "(tested on Ubuntu 22.04 LTS under Gnome version 42.5 (Wayland and X11))"
 exit 0 
 }
@@ -221,7 +224,7 @@ else
  str="${str:l}"
  keywrd="${keywrd:l}" # au cas ou
  #Isolate the time reference and remove possible vagueness 
- #(, oppinionated but adjustable. Only the future considered) 
+ #(oppinionated but adjustable. Only the future considered) 
  if [[ $str == *"$keywrd"* ]] ; then
     dt=($(date +%Y%n%_m%n%e%n%u%n%k))
     #dt[1]=y, dt[2]=m, dt[3]=d, dt[4]=dw, dt[5]=h
@@ -231,10 +234,6 @@ else
     #whisper detected non-speech events such as "(wind blowing)" or "[BLANK_AUDIO]": 
     str="${str/\(*\)}"   
     str="${str/\[*\]}"    
-    #keep the number stuck to its unit so that one can say "3rd of March at 22 hours 30 minutes":
-    str="${str/ hour(s|)/hour}"
-    str="${str/ minute(s|)/minute}"
-    str="${str/ seconds/seconds}"
     #whisper transcribes these to alph. when time context unclear:
     str="${str/ nine/ 9}" 
     str="${str/ eight/ 8}"
@@ -248,18 +247,25 @@ else
     str="${str/ first/ 1}"  # the other ordinals seems to behave in whisper
     str="${str/ next weekend/ Sun 1pm +7day}"
     str="${str/ weekend/ Sun 1pm}"
+    str="${str/ couple of/ 2}"
+    str="${str/ dozen/ 12}"
+    str="${str/ decade/ 10year}"
+    str="${str/ (several|few)/ 3}"
+    #"dash" seems better than "slash": 2023 dash 6 dash 12 not 2023 slash 6 slash 12:
+    str="${str// slash /'/'}"
     #Some fixed dates:--------------
     yr="$dt[1]"
     #Extract the year if present (for the floaters like easter etc., look in the future)
     for st in "${=str//[^0-9]##/ }"; do ; yr=$(( st > yr ? st : yr )) ; done
+    [[ "${str/(#m) [0-9]## year[s]#}" ]] && yr=$(( yr + ${${MATCH//[^0-9]}:-0} ))
     str="${str/(#m) next (christ|hallow|thanks|easter|valent)/ +1year $MATCH[7,$MEND]}"
     str="${str/ christmas( day|)/ Dec 25th }"
-    str="${str/ halloween/ Oct 31st}"
+    str="${str/ halloween/ Oct 31st }"
     str="${str/ (st. |saint |)valentine('s day|'s|)/ Feb 14th }"
     # US of A:
-    str="${str/ thanksgiving( day|)/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7))}"
-    str="${str/ cyber monday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +4day}"
-    str="${str/ black friday/ Nov ((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +1day}"
+    str="${str/ thanksgiving( day|)/ Nov $((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7))}"
+    str="${str/ cyber monday/ Nov $((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +4day}"
+    str="${str/ black friday/ Nov $((28 - (5 + yr + yr/4 - yr/100 + yr/400) % 7)) +1day}"
     # Canada:
     str="${str/ boxing day/ Dec 26th }"
     str="${str/ canada day/ July 1st}"
@@ -275,8 +281,7 @@ else
     #-------------------------------
     #whisper needs a clear pause to produce 12:34 or 12.34 instead of 1234 but we can fight such unnatural speech:
     str="${str/(#m)( [0-9][0-5][0-9] | 1[0-9][0-5][0-9] )/$MATCH[1,$MEND-$MBEGIN-2]:$MATCH[$MEND-$MBEGIN-1,$MEND]}"
-    #the logic above being that you can specify this way the time up to 19:59 (1959). A compromise.
-    #If one wants to say 20:xx  and later (transcribed as 20xx without the exag. pause) they can say "20 hours xx minutes".
+    #the logic above being that you can specify this way the time up to 19:59 (1959). Compromise, avoids overlap with yr.
     #when it does produce 2.34 we convert it to 2:34:
     str="${str/(#m)[0-9].[0-9]/$MATCH[1]:$MATCH[3]}"
     str="${str/(#m)([ 123][0-9](rd|nd|st|th)#(,)#| at| to|ast)# ([1-9]|10|11)(:[0-5][0-9])# in the morning/$MATCH[1,$MEND-$MBEGIN-14]am}"
@@ -288,10 +293,6 @@ else
     str="${str/(#m)tonight(,| at| for)# ([6-9]|10|11)(:[0-5][0-9])#/today $MATCH[9,$MEND]pm}"
     str="${str/(#m) (1|2|)[0-9] to / -$MATCH[1,$MEND-$MBEGIN-3]min }"
     str="${str/(#m) (1|2|)[0-9] past / +$MATCH[1,$MEND-$MBEGIN-5]min }"
-    str="${str/ couple/ +2}"
-    str="${str/ dozen/ +12}"
-    str="${str/ decade/ +10year}"
-    str="${str/ (several|few)/ +3}"
     str="${str/ quarter to / -15min }"
     str="${str/ quarter past / +15min }"
     str="${str/ half past / +30min }"
@@ -317,9 +318,8 @@ else
     str="${str/ dusk/ 7:30pm}"
     str="${str/ before dawn/ 4:30am}"
     #Remove the leftover ballast (stop) words and symbols:
-    #str="${str// time | is | set | for | from | to | in | on | at | of | the | and | an | a |st |nd |rd |th | o'clock / }"
     for stw in " is " " set " " for " " from " " to " " in " " on " " at " " of " " the " " and " " an " " a " "st " "nd " "rd " "th " " o'clock " ; do ; str="${str//$stw/ }" ; done
-    str="${str//[[:punct:]]~[':-+']}"
+    str="${str//[[:punct:]]~[-:+]}"
     #fix what we may have broken:-)
     str="${str/ augu / august }"
     str="${str/ mon / month }"
@@ -338,7 +338,7 @@ else
  fi
  unset yr eas dt
 fi
- 
+
 # If clipboard flag is set, we dump everything in the clipboard (make sure xsel is installed, e.g. apt install xsel):
 if [[ $clip ]]; then 
    echo -en '>Created on '$noted$([[ $adate ]] && echo ", ( Revisit: $adate )")':\n>- [ ] ' | cat - $wf.txt | xsel -bi 
