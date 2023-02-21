@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Spoken_Notes_TO-DOs
 Comment=For use with the vm and td CLI utilities
-Exec=gnome-terminal --window-with-profile=YOURPROFILENAME --hide-menubar --geometry=64x6+380+920 --title=VoiceMemos
+Exec=gnome-terminal --window-with-profile=YOURPROFILENAME --hide-menubar --geometry=64x6+380+920 --title=Spoken
 Icon=/home/YOURUSERNAME/.local/share/icons/hicolor/128x128/apps/mic128.png
 Terminal=true
 Type=Application
