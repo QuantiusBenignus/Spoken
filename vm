@@ -1,5 +1,5 @@
 #!/usr/bin/zsh
-# For users of bash, please, use instead the file named "vm.bash"
+# Should work also for users of bash, replace the above shebang with the path to 'bash'
 
 # MIT License
 
@@ -57,7 +57,7 @@ JOPLIND=$HOME'/.config/joplin-desktop/resources'  #of course you can choose anot
 ramf="$TEMPD/vmfile"
 
 #Set the number of processing threads for whisper.cpp inference (adjust for your case):
-NTHR=2
+NTHR=4
 #It seems that the optimum number of transcribe threads should equal CPU processing cores:
 #NTHR="$(( $(lscpu | awk '/^Socket\(s\)/{ print $2 }') * $(lscpu | awk '/^Core\(s\) per socket/{ print $4 }') ))"
 
@@ -140,9 +140,9 @@ done
 
 for af in ${audio_files[@]}; do
 if [[ -r $af ]]; then 
-   echo -e '>>>>>>>>>>>>>>>>\n Loading audio from file...'$af'\n>>>>>>>>>>>>>>>\n'
+   echo -e '>>>>>>>>>> Loading audio from file...'$af' >>>>>>>>>>\n'
 # Here we are tasking sox with error handling:
-   sox $af -t wav $af.wav channels 1 rate 16k norm
+   sox -q $af -t wav $af.wav channels 1 rate 16k norm
    wavs=("${wavs[@]}" "$TEMPD/$af.wav")  
 else
    echo -e '>>>>>>>>>>>>>>>>\n File '$af' cannot be read !!!\n>>>>>>>>>>>>>>>\n'
@@ -151,12 +151,13 @@ fi
 done
 
 if [[ ( ${#wavs[@]} -eq 0 ) ]]; then
+echo -e '>>>>>>>>>>>>>>>> Speak in the microphone...>>>>>>>>>>>>>>>\n'
 # sox typically requires user input (CTRL-C) to stop recording from the microphone, this prevents the script from "overreacting":
-   trap "echo -e '>>>>>>>>>>>>>>>>\n Done recording\n>>>>>>>>>>>>>>>\n'" SIGINT
+   trap "echo -e '>>>>>>>>>>>>>>>> Done recording >>>>>>>>>>>>>>>\n'" SIGINT
 # recording in wav format at 16k rate, the only currently accepted by whisper.cpp:
 # Attempts to stop on silence of 3s with threshold of 4%, if in doubt press CTRL-C: 
   # rec -t wav $ramf rate 16k channels 1 silence -l  0   1 2.0 1%
-   rec -t wav $ramf rate 16k channels 1 silence 1 0.1 3% 1 3.6 3%
+   rec -q -t wav $ramf rate 16k channels 1 silence 1 0.1 3% 1 3.6 3%
    wavs=("${wavs[@]}" "$ramf")     
 fi
 
@@ -164,11 +165,11 @@ fi
 [[ $(curl --silent http://localhost:41184/ping) == 'JoplinClipperServer' ]] && apiup="1"   
 
 for wf in ${wavs[@]}; do   
-echo -e '>>>>>>>>>>>>>>>>\n Now transcribing...\n>>>>>>>>>>>>>>>\n'
+echo -e '>>>>>>>>>>>>>>>> Now transcribing... >>>>>>>>>>>>>>>\n'
 # transcribe is a symbolic link (somewhere in your path) to the compiled "main" executable in the whisper.cpp directory.
 # For example: in your ~/bin> create it with `ln -s /full/path/to/whisper.cpp/main $HOME/bin/transcribe`
 # The transcribed text is stored in a file (-otxt), in this case /dev/shm/vmfile.txt 
-transcribe -t $NTHR -pc -nt -m $model -f $wf -otxt
+transcribe -t $NTHR -pc -nt -m $model -f $wf -otxt 2>/dev/null
 
 # For tracking the time of creation of notes:
 noted="$(date +%Y-%m-%dT%T)" #ISO-8601-ish.  
@@ -177,12 +178,12 @@ noted="$(date +%Y-%m-%dT%T)" #ISO-8601-ish.
 # If clipboard flag is set, we dump everything in the clipboard (make sure xsel is installed, e.g. apt install xsel):
 if [[ $clip ]]; then 
    echo -en '>Created on '$noted':\n>' | cat - $wf.txt | xsel -bi 
-   echo -e ">>>>>>>>>>>>>>>\n Copied to clipboard!\n>>>>>>>>>>>>>>>\n"
+   echo -e ">>>>>>>>>>>>>>> Copied to clipboard! \n"
 else
 # Otherwise we will use the Joplin data API:
 # Let's prepare a JSON payload (in a temp file in memory) to pass to curl: 
 uct="$(date +%s%3N)"
-echo -en '{ "title": "'$noted'", "user_created_time": "'$uct'", "parent_id":"'$NOTEBOOK_ID'", "body": "## '$noted'  \\n---\\n> ' > $TEMPD/vmjson 
+echo -en '{ "title": "'$noted'", "parent_id":"'$NOTEBOOK_ID'", "user_created_time":"'$uct'", "body": "## '$noted'  \\n---\\n> ' > $TEMPD/vmjson 
 # In my case parent_id is the Joplin id of a notebook named VoiceMemos  
 str="$(< $wf.txt)"
 # Whisper detected non-speech events such as (wind blowing): 
@@ -195,7 +196,7 @@ echo -en $str'\\n\\n "}' >> $TEMPD/vmjson
 if [[ $apiup ]]; then  
    # We contact the Joplin REST API with curl using the prepared JSON payload in the file "vmjson":
    curl -d @$TEMPD/vmjson -o $TEMPD/vm-curlout --no-progress-meter "http://localhost:41184/notes?token="$AUTH_TOKEN
-   echo -e '>>>>>>>>>>>>>>>>\n New note created!\n>>>>>>>>>>>>>>>\n'
+   echo -e '\n--------------------  New note created!  -----------------------'
    # You should find the newly created to-do (with the timestamp for a title and alarm set fo adate) in the notebook of your choice.
 else
    cp $TEMPD'/vmjson' $JOPLIND'/'$noted'n_uncollected.json' 
