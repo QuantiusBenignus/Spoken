@@ -151,6 +151,7 @@ fi
 done
 
 if [[ ( ${#wavs[@]} -eq 0 ) ]]; then
+#Add a prompt since we made rec quiet with -q:
 echo -e '>>>>>>>>>>>>>>>> Speak in the microphone...>>>>>>>>>>>>>>>\n'
 # sox typically requires user input (CTRL-C) to stop recording from the microphone, this prevents the script from "overreacting":
    trap "echo -e '>>>>>>>>>>>>>>>> Done recording >>>>>>>>>>>>>>>\n'" SIGINT
