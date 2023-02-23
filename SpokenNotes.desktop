@@ -22,5 +22,5 @@ Exec=gnome-terminal --window-with-profile=YOURPROFILENAME --hide-menubar --geome
 
 [Desktop Action inline-todo]
 Name=ToDo to Clipboard
-Exec=gnome-terminal --window-with-profile=YOURPROFILENAME --hide-menubar --geometry=64x6+380+920 --title=InlineTodo -- td -c
+Exec=gnome-terminal --window-with-profile=YOURPROFILENAME --hide-menubar --geometry=64x6+380+920 --title=InlineTodo -- td -cs -w TODO
 
