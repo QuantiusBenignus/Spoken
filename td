@@ -176,7 +176,7 @@ do
         -p|--priority)  shift
                         plevel="$1";;
         -h|--help)      show_help;;
-        -c|--clip)      clip=1;;
+        -c|--clip)      clip=1 ; xsel -cb;;
         -s|--style)     style=1;;
         -b|--base)      model="$TEMPD/ggml-base.en.bin";;
         --);;
@@ -385,14 +385,14 @@ else
  fi
 fi
 
-# If clipboard flag is set, we send to-do to the clipboard (make sure xsel is installed, e.g. apt install xsel):
+# If clipboard flag is set, we send to-do(s) to the clipboard (make sure xsel is installed, e.g. apt install xsel):
 if [[ $clip ]]; then 
     if [[ $style ]]; then
       #Confluence style  
-      echo -en '- [ ] @'"$assignee $tags ${adate:+//$(date -d @$adate[1,10] +%Y-%m-%dT%H:%M)} $cstr"'\n' | xsel -bi 
+      echo -en '- [ ] @'"$assignee $tags ${adate:+//$(date -d @$adate[1,10] +%Y-%m-%dT%H:%M)} $cstr"'\n' | xsel -ab 
     else
       # todo.txt style
-      echo -en '- [ ] '"$plevel   ${noted%%T*} $cstr $tags @$assignee ${adate:+due:$(date -d @$adate[1,10] +%Y-%m-%dT%H:%M)}"'\n' | xsel -bi
+      echo -en '- [ ] '"$plevel   ${noted%%T*} $cstr $tags @$assignee ${adate:+due:$(date -d @$adate[1,10] +%Y-%m-%dT%H:%M)}"'\n' | xsel -ab
     fi
     echo $BWARND
     echo -e "-----------------  Copied task to clipboard!  ------------------\n"
