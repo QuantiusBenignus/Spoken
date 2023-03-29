@@ -6,9 +6,6 @@ The note transcription utility **vm** is mature and will not see many changes.
 The to-do utility **td** has the added complexity of parsing fuzzy datetime references and the code is ongoing development. 
 While very much work in progress, the zsh version of **td** is ahead of the bash version in terms of pizzaz.)_
 
-![vmJoplin-todo.png](resources/vmJoplin-todo.png)
-![whisper-todo.png](resources/whisper-todo.png)
-
 #### DESCRIPTION:  
 These **two Linux command-line utilities** (with optional GNOME integration) are named respectively **vm** and **td** for brevity and quick access from the command line (check your PATH for conflicts and rename accordingly if needed.)
 
@@ -18,8 +15,10 @@ These **two Linux command-line utilities** (with optional GNOME integration) are
    -   **creates a new to-do task in the Joplin running instance** (in the case of **td**),  parsing the transcribed text for a valid datetime to set a notification/alarm (see details below)
    -   if Joplin is not running, **stores the note or to-do task in a file for later collection**.
    -   On a next invocation of either utility, if Joplin is up, **the temporarily stored notes / to-dos are collected** 
+
+![vmJoplin-todo.png](resources/vmJoplin-todo.png)
+![whisper-todo.png](resources/whisper-todo.png)
   
-![td-mermaid-diagram.png](resources/td-mermaid-diagram.png)
 
 As CLI scripts relying on built-in Linux tools under the hood (plus a few optional but common utilities such as `sox` and `curl`), **vm**'s and **td**'s feature set is exposed by a few command line arguments:
 #### SYNOPSIS:
@@ -39,6 +38,9 @@ As CLI scripts relying on built-in Linux tools under the hood (plus a few option
 - any and all non-option arguments are treated as input audio files to be converted
       * *(tested on Ubuntu 22.04 LTS under Gnome version 42.5, with the English language models )*
 ---
+
+![td-mermaid-diagram.png](resources/td-mermaid-diagram.png)
+
 Please, note that these 2 command line utilities for **Linux** are written for *zsh* but a quick (and possibly dirty) translation to bash (see folder For_bash_users) is provided for users of *bash*, who should use those instead of the zsh originals.
 
 
