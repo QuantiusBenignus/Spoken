@@ -1,16 +1,16 @@
 # *Joplin Text Notes and To-Dos via Speech*
 ##### *Voice memos recorded from the microphone, transcribed offline to text and converted to Joplin notes or To-Do tasks with automatic notifications. Can also transcribe batches of existing voice memos.*
 ---
-_(This repository expands on the older [NoteWhispers](https://github.com/QuantiusBenignus/NoteWhispers) by bringing new tools, (bugs) and functionality, such as recording Joplin to-do tasks with automatic alarms and the ability to handle multiple voice memos. 
+_(This repository expands on the older [NoteWhispers](https://github.com/QuantiusBenignus/NoteWhispers) by bringing new tools and functionality, such as recording Joplin to-do tasks with automatic alarms and the ability to transcribe multiple voice-memo/to-do files. 
 The note transcription utility **vm** is mature and will not see many changes.
-The to-do utility **td** has the added complexity of parsing fuzzy datetime references with ongoing development of the code. 
-Very much work in progress, the zsh version of `td` is ahead of the bash version in terms of pizzaz.)_
+The to-do utility **td** has the added complexity of parsing fuzzy datetime references and the code is ongoing development. 
+While very much work in progress, the zsh version of **td** is ahead of the bash version in terms of pizzaz.)_
 
 ![vmJoplin-todo.png](resources/vmJoplin-todo.png)
 ![whisper-todo.png](resources/whisper-todo.png)
 
 #### DESCRIPTION:  
-These two Linux command-line utilities (with optional GNOME integration) are named respectively **vm** and **td** for brevity and quick access from the command line (check your PATH for conflicts and rename accordingly if needed.)
+These **two Linux command-line utilities** (with optional GNOME integration) are named respectively **vm** and **td** for brevity and quick access from the command line (check your PATH for conflicts and rename accordingly if needed.)
 
 **vm** and **td** utilize previously unavailable, high-quality **offline** automatic speech recognition (ASR) technology (a derivative of [Open AI's](https://openai.com/) open-sourced [Whisper ASR models](https://github.com/openai/whisper)) to convert user speech, such as voice memos captured from the microphone (or pre-recorded audio files), into textual notes that are  automatically saved in the awesome, **open-source, note-taking application** [Joplin](https://joplinapp.org/). At its core, each utility records a voice memo from the default audio input channel (microphone) or uses one or multiple audio files as the input,  transcribes it into text using [whisper.cpp](https://github.com/ggerganov/whisper.cpp) (a C/C++ port of Open AI's Whisper) and either: 
    - **sends it (properly formated) to the clipboard**, or
