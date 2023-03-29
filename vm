@@ -125,7 +125,7 @@ while [[ ( $# -gt 0 ) ]]
 do
     case "$1" in
         -h|--help) show_help;;
-        -c|--clip) clip=1;;
+        -c|--clip) clip=1 ; xsel -cb;;
         -b|--base) model="$TEMPD/ggml-base.en.bin";;
         --);;
         *) audio_files=("${audio_files[@]}" "$1");;
@@ -178,7 +178,7 @@ noted="$(date +%Y-%m-%dT%T)" #ISO-8601-ish.
  
 # If clipboard flag is set, we dump everything in the clipboard (make sure xsel is installed, e.g. apt install xsel):
 if [[ $clip ]]; then 
-   echo -en '>Created on '$noted':\n>' | cat - $wf.txt | xsel -bi 
+   echo -en '>Created on '$noted':\n>' | cat - $wf.txt | xsel -ab 
    echo -e ">>>>>>>>>>>>>>> Copied to clipboard! \n"
 else
 # Otherwise we will use the Joplin data API:
